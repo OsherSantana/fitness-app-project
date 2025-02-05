@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness App - "Best Friend"</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container">
+
+        <header>
+            <!-- Header -->
+            <h1>Macro Tracker</h1>
+        </header>
+        <section class="food-form">
+            <h2>Add Food</h2>
+            <form id="addFoodForm">
+                <input type="text" id="foodName" placeholder="Food Name" required>
+                <input type="number" id="foodWeight" placeholder="Food Weight" required>
+                <input type="number" id="foodCalories" placeholder="Calories" required>
+                <input type="number" id="foodProtien" placeholder="Protein In Grams" required>
+                <input type="number" id="foodCarbs" placeholder="Carbs In Grams" required>
+                <input type="number" id="foodFats" placeholder="Fats In Grams" required>
+                <button type="submit" id="submitFoodForm">Add Food</button>
+            </form>
+        </section>
+
+        <!-- Food List -->
+        <section class="food-list">
+            <h2>Today's Foods</h2>
+            <div id="foodList"></div>
+        </section>
+
+        <!-- Daily Totals -->
+        <section class="daily-totals">
+            <h2>Daily Totals</h2>
+            <div id="macroTotals"></div>
+        </section>
+    </div>
+
+
+
+    <script src="js/database.js" type="module"></script>
+    <script src="js/app.js" type="module"></script>
+</body>
+
+</html>
