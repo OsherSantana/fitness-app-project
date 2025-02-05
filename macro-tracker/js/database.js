@@ -1,13 +1,14 @@
-
-let foods = [];
+let foods = [];  // Start fresh
 
 function addFood(food) {
     foods.push(food);
+    saveToLocalStorage();
     console.log("Current foods: ", foods);
 }
 
 function removeFood(foodToRemove) {
     foods = foods.filter(food => food.name !== foodToRemove);
+    saveToLocalStorage();
     console.log("Current foods: ", foods);
 }
 
@@ -19,7 +20,8 @@ function saveToLocalStorage() {
     localStorage.setItem('foods', JSON.stringify(foods));
 }
 
-const testFood = {
+// Test Data - you can remove this after testing
+const testFood1 = {
     name: "Banana",
     weight: 100,
     calories: 89,
@@ -28,10 +30,16 @@ const testFood = {
     fats: 0.3
 };
 
+const testFood2 = {
+    name: "Pineapple",
+    weight: 100,
+    calories: 50,
+    protein: 0.5,
+    carbs: 13,
+    fats: 0.1
+};
 
-
-addFood(testFood);
-console.log("Getting all foods:", getAllFoods());
+addFood(testFood1);
+addFood(testFood2);
 
 export { addFood, removeFood, getAllFoods };
-
