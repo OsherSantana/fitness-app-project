@@ -8,6 +8,15 @@ const foodProtein = document.getElementById('foodProtein');
 const foodCarbs = document.getElementById('foodCarbs');
 const foodFats = document.getElementById('foodFats');
 
+
+function displayDailyFoods() {
+    const foods = getAllFoods();
+    const foodList = document.getElementById('foodList');
+
+    foodList.innerHTML = '';
+}
+
+
 foodForm.addEventListener('submit', function (event) {
     event.preventDefault();
 
