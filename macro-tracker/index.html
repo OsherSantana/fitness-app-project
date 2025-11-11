@@ -17,6 +17,12 @@
         </header>
         <section class="food-form">
             <h2>Add Food</h2>
+            <div id="errorMessages" class="message error-message">
+                Test Error Message
+            </div>
+            <div id="successMessages" class="message success-message">
+                Test Success Message
+            </div>
             <form id="addFoodForm">
                 <input type="text" id="foodName" placeholder="Food Name" required>
                 <input type="number" id="foodWeight" placeholder="Food Weight" required>
@@ -24,7 +30,10 @@
                 <input type="number" id="foodProtein" placeholder="Protein In Grams" required>
                 <input type="number" id="foodCarbs" placeholder="Carbs In Grams" required>
                 <input type="number" id="foodFats" placeholder="Fats In Grams" required>
-                <button type="submit" id="submitFoodForm">Add Food</button>
+                <button type="submit" id="submitFoodForm">
+                    <span class="button-text">Add Food</span>
+                    <span class="button-loader" style="display: none;">Adding...</span>
+                </button>
             </form>
         </section>
 
