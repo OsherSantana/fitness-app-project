@@ -1,11 +1,8 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import "./style.css";
-import type { Food } from "./types";
 import type React from "react";
+import type { Food } from "./types";
 
-
-// This matches the values of your form inputs.
-// We keep them as strings because inputs always give us strings.
 interface FormState {
   name: string;
   weight: string;
@@ -15,7 +12,7 @@ interface FormState {
   fats: string;
 }
 
-// Same validation rules you had in app.js, but in TypeScript.
+// אותה ולידציה כמו קודם – רק נשארת פה
 function validateFoodData(food: Food): string[] {
   const errors: string[] = [];
 
@@ -46,11 +43,10 @@ function validateFoodData(food: Food): string[] {
   return errors;
 }
 
-function App() {
-  // This replaces your old "foods" array in database.js
-  const [foods, setFoods] = useState<Food[]>([]);
+const API_BASE = "http://localhost:3000";
 
-  // This holds the current form values (replaces document.getElementById stuff)
+function App() {
+  const [foods, setFoods] = useState<Food[]>([]);
   const [form, setForm] = useState<FormState>({
     name: "",
     weight: "",
@@ -59,81 +55,130 @@ function App() {
     carbs: "",
     fats: "",
   });
-
-  // Messages for the user (same idea as errorContainer / successContainer)
   const [errors, setErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
 
-  // 🔹 Load foods from localStorage when the app first loads
+  // ⬇️ פעם ראשונה שהקומפוננטה נטענת – נביא את כל המאכלים מהשרת
   useEffect(() => {
-    const stored = localStorage.getItem("foods");
-    if (stored) {
+    async function fetchFoods() {
       try {
-        const parsed: Food[] = JSON.parse(stored);
-        setFoods(parsed);
-      } catch (e) {
-        console.error("Failed to parse foods from localStorage", e);
+        const res = await fetch(`${API_BASE}/api/foods`);
+        if (!res.ok) {
+          throw new Error("Failed to fetch foods");
+        }
+        const data: Food[] = await res.json();
+        setFoods(data);
+      } catch (err) {
+        console.error(err);
+        setErrors(["Failed to load foods from server"]);
+      } finally {
+        setInitialLoading(false);
       }
     }
+
+    fetchFoods();
   }, []);
 
-  // 🔹 Save foods to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("foods", JSON.stringify(foods));
-  }, [foods]);
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { id, value } = e.target;
 
-  function handleInputChange(
-  e: React.ChangeEvent<HTMLInputElement>
-) {
-  const { id, value } = e.target;
+    const key = id.replace("food", "").toLowerCase();
 
-  const key = id.replace("food", "").toLowerCase();
-
-  setForm((prev) => ({
-    ...prev,
-    [key]: value,
-  }));
-}
-
-function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-  e.preventDefault();
-  setErrors([]);
-  setSuccess("");
-
-  const newFood: Food = {
-    name: form.name,
-    weight: Number(form.weight),
-    calories: Number(form.calories),
-    protein: Number(form.protein),
-    carbs: Number(form.carbs),
-    fats: Number(form.fats),
-  };
-
-  const validationErrors = validateFoodData(newFood);
-  if (validationErrors.length > 0) {
-    setErrors(validationErrors);
-    return;
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   }
 
-  setFoods((prev) => [...prev, newFood]);
-  setForm({
-    name: "",
-    weight: "",
-    calories: "",
-    protein: "",
-    carbs: "",
-    fats: "",
-  });
-  setSuccess("Food added successfully!");
-}
+  // ⬇️ עכשיו handleSubmit שולח POST לשרת
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setErrors([]);
+    setSuccess("");
+    setLoading(true);
 
+    const newFood: Food = {
+      name: form.name,
+      weight: Number(form.weight),
+      calories: Number(form.calories),
+      protein: Number(form.protein),
+      carbs: Number(form.carbs),
+      fats: Number(form.fats),
+    };
 
-  // Replaces removeFood() + updateDisplay()
-  function handleDelete(name: string) {
-    setFoods((prev) => prev.filter((f) => f.name !== name));
+    const validationErrors = validateFoodData(newFood);
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/foods`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newFood),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        const message =
+          errBody?.error || "Failed to add food on server";
+        throw new Error(message);
+      }
+
+      const savedFood: Food = await res.json();
+
+      // מעדכן את ה־state לפי מה שהשרת החזיר
+      setFoods((prev) => [...prev, savedFood]);
+
+      setForm({
+        name: "",
+        weight: "",
+        calories: "",
+        protein: "",
+        carbs: "",
+        fats: "",
+      });
+      setSuccess("Food added successfully!");
+    } catch (err: any) {
+      console.error(err);
+      setErrors([err.message || "Failed to add food"]);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  // Same idea as displayDailyMacros in app.js
+  // ⬇️ מחיקת מאכל – DELETE לשרת ואז עדכון state
+  async function handleDelete(name: string) {
+    setErrors([]);
+    setSuccess("");
+
+    try {
+      const res = await fetch(`${API_BASE}/api/foods/${encodeURIComponent(name)}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok && res.status !== 204) {
+        const errBody = await res.json().catch(() => null);
+        const message =
+          errBody?.error || "Failed to delete food on server";
+        throw new Error(message);
+      }
+
+      // אם השרת מחק בהצלחה – נעדכן גם בצד לקוח
+      setFoods((prev) => prev.filter((f) => f.name !== name));
+      setSuccess("Food deleted successfully!");
+    } catch (err: any) {
+      console.error(err);
+      setErrors([err.message || "Failed to delete food"]);
+    }
+  }
+
   const totals = foods.reduce(
     (acc, food) => {
       acc.calories += food.calories;
@@ -151,9 +196,10 @@ function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         <h1>Macro Tracker</h1>
       </header>
 
-      {/* ADD FOOD FORM */}
       <section className="food-form">
         <h2>Add Food</h2>
+
+        {initialLoading && <p>Loading foods from server...</p>}
 
         {errors.length > 0 && (
           <div className="message error-message">
@@ -219,13 +265,14 @@ function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
             onChange={handleInputChange}
           />
 
-          <button type="submit" id="submitFoodForm">
-            <span className="button-text">Add Food</span>
+          <button type="submit" id="submitFoodForm" disabled={loading}>
+            <span className="button-text">
+              {loading ? "Adding..." : "Add Food"}
+            </span>
           </button>
         </form>
       </section>
 
-      {/* FOOD LIST */}
       <section className="food-list">
         <h2>Today&apos;s Foods</h2>
         <div id="foodList">
@@ -250,7 +297,6 @@ function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         </div>
       </section>
 
-      {/* DAILY TOTALS */}
       <section className="daily-totals">
         <h2>Daily Totals</h2>
         <div id="macroTotals">
